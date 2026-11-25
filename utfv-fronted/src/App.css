@@ -566,3 +566,156 @@ body {
     padding: 0;
   }
 }
+/* =========================================
+   DISEÑO RESPONSIVO PARA CELULARES Y TABLETS
+   ========================================= */
+@media (max-width: 768px) {
+  html, body {
+    overflow-x: hidden;
+    width: 100%;
+  }
+
+  /* Barra superior institucional */
+  .navbar {
+    padding: 10px 14px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .brand {
+    width: 100%;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .brand h1 {
+    font-size: 0.92rem;
+  }
+
+  .nav-actions {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* Pantalla de Login / Registro */
+  .auth-container {
+    margin: 16px 12px;
+    width: auto;
+  }
+
+  .auth-body {
+    padding: 18px 16px 22px;
+  }
+
+  /* Apilar Sidebar arriba y Contenido abajo */
+  .erp-layout {
+    flex-direction: column;
+    min-height: auto;
+  }
+
+  .sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 2px solid var(--utfv-border);
+    padding: 12px 10px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .sidebar-title {
+    width: 100%;
+    padding: 4px 6px;
+    margin-top: 4px;
+  }
+
+  .menu-btn {
+    width: auto;
+    flex: 1 1 calc(50% - 6px);
+    padding: 9px 10px;
+    font-size: 0.82rem;
+  }
+
+  /* Área principal y tarjetas */
+  .main-content {
+    width: 100%;
+    max-width: 100%;
+    padding: 14px 12px;
+  }
+
+  .card {
+    padding: 16px 14px;
+    border-radius: 10px;
+  }
+
+  .boleta-banner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .boleta-banner h2 {
+    font-size: 1.12rem;
+  }
+
+  /* Buscadores, filtros y botones superiores */
+  .selectors {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .selectors select,
+  .selectors .input-control,
+  .selectors .btn {
+    width: 100%;
+  }
+
+  /* Formularios en 1 sola columna en celular */
+  .form-grid-2 {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .add-materia-form {
+    flex-direction: column;
+  }
+
+  .add-materia-form .input-control,
+  .add-materia-form .btn {
+    width: 100%;
+  }
+
+  /* Tablas desplazables horizontalmente con el dedo */
+  .tabla-calificaciones {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+  }
+
+  .tabla-calificaciones th,
+  .tabla-calificaciones td {
+    padding: 9px 10px;
+    font-size: 0.83rem;
+  }
+
+  .resumen-boleta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  /* Modales (Registrar Alumno, etc.) */
+  .modal-overlay {
+    padding: 10px;
+  }
+
+  .modal-content {
+    padding: 18px 14px;
+    max-height: 92vh;
+  }
+}
