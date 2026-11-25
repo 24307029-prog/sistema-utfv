@@ -32,4 +32,4 @@ const alumnoSchema = new mongoose.Schema({
   tramites: { type: Array, default: [] }
 }, { strict: false, timestamps: true });
 
-module.exports = mongoose.model('Alumno', alumnoSchema);
+module.exports = mongoose.model('Alumno', alumnoSchema, 'estudiantes');
