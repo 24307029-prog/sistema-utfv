@@ -73,6 +73,58 @@ function App() {
     carreraClave: 'TI'
   });
 
+  const [coloniasDisponibles, setColoniasDisponibles] = useState([]);
+  const [buscandoCP, setBuscandoCP] = useState(false);
+
+  const handleCambioCPAspirante = async (valorRaw) => {
+    const cpLimpio = valorRaw.replace(/\D/g, '').slice(0, 5);
+    setFormAspirante(prev => ({
+      ...prev,
+      codigo_postal: cpLimpio,
+      ...(cpLimpio.length < 5 ? { municipio: '', colonia: '' } : {})
+    }));
+
+    if (cpLimpio.length < 5) {
+      setColoniasDisponibles([]);
+      return;
+    }
+
+    setBuscandoCP(true);
+    try {
+      const resp = await fetch(`https://api.zippopotam.us/mx/${cpLimpio}`);
+      if (resp.ok) {
+        const data = await resp.json();
+        const lugares = data.places || [];
+        const colonias = lugares.map(p => p['place name']);
+        const municipioDetectado =
+          lugares[0]?.['state'] && cpLimpio.startsWith('544')
+            ? 'Nicolás Romero'
+            : lugares[0]?.['state'] && cpLimpio.startsWith('529')
+            ? 'Atizapán de Zaragoza'
+            : lugares[0]?.['state'] && cpLimpio.startsWith('547')
+            ? 'Cuautitlán Izcalli'
+            : lugares[0]?.['state'] && cpLimpio.startsWith('540')
+            ? 'Tlalnepantla de Baz'
+            : lugares[0]?.['state'] && cpLimpio.startsWith('53')
+            ? 'Naucalpan de Juárez'
+            : lugares[0]?.['state'] || '';
+
+        setColoniasDisponibles(colonias);
+        setFormAspirante(prev => ({
+          ...prev,
+          municipio: municipioDetectado,
+          colonia: colonias[0] || ''
+        }));
+      } else {
+        setColoniasDisponibles([]);
+      }
+    } catch (err) {
+      setColoniasDisponibles([]);
+    } finally {
+      setBuscandoCP(false);
+    }
+  };
+
   const [registros, setRegistros] = useState([]);
   const [alumnoSeleccionadoId, setAlumnoSeleccionadoId] = useState('');
   const [periodoSeleccionado, setPeriodoSeleccionado] = useState('2026-3');
@@ -443,6 +495,23 @@ function App() {
 
   const handleRegistrarAspirante = async (e) => {
     e.preventDefault();
+
+    if (!/^\d{10}$/.test(formAspirante.telefono)) {
+      alert('El teléfono celular debe contener exactamente 10 dígitos numéricos.');
+      return;
+    }
+
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(formAspirante.email.trim())) {
+      alert('Ingresa un correo electrónico válido con su dominio (ej. nombre@gmail.com o nombre@utfv.edu.mx).');
+      return;
+    }
+
+    if (!/^\d{5}$/.test(formAspirante.codigo_postal)) {
+      alert('El Código Postal debe tener 5 dígitos.');
+      return;
+    }
+
     try {
       const carreraObj = CARRERAS_UTFV.find(c => c.clave === formAspirante.carreraClave);
       const payload = {
@@ -451,7 +520,7 @@ function App() {
         edad: formAspirante.edad,
         genero: formAspirante.genero,
         telefono: formAspirante.telefono,
-        email: formAspirante.email,
+        email: formAspirante.email.trim().toLowerCase(),
         direccion: {
           calle: formAspirante.calle,
           colonia: formAspirante.colonia,
@@ -764,12 +833,48 @@ function App() {
                   </div>
                   <div className="form-grid-2">
                     <div className="form-group">
-                      <label>Teléfono</label>
-                      <input type="text" className="input-control" required value={formAspirante.telefono} onChange={(e) => setFormAspirante({ ...formAspirante, telefono: e.target.value })} />
+                      <label>Teléfono Celular (10 dígitos)</label>
+                      <input
+                        type="tel"
+                        inputMode="numeric"
+                        maxLength={10}
+                        pattern="\d{10}"
+                        placeholder="Ej: 5512345678"
+                        className="input-control"
+                        required
+                        value={formAspirante.telefono}
+                        onChange={(e) =>
+                          setFormAspirante({
+                            ...formAspirante,
+                            telefono: e.target.value.replace(/\D/g, '').slice(0, 10)
+                          })
+                        }
+                      />
                     </div>
                     <div className="form-group">
-                      <label>Correo Personal</label>
-                      <input type="email" className="input-control" required value={formAspirante.email} onChange={(e) => setFormAspirante({ ...formAspirante, email: e.target.value })} />
+                      <label>Correo Personal (con dominio)</label>
+                      <input
+                        type="email"
+                        list="dominios-correo"
+                        placeholder="usuario@gmail.com"
+                        pattern="^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+                        title="Debe incluir @ y un dominio válido (ej. @gmail.com)"
+                        className="input-control"
+                        required
+                        value={formAspirante.email}
+                        onChange={(e) => setFormAspirante({ ...formAspirante, email: e.target.value.trim() })}
+                      />
+                      <datalist id="dominios-correo">
+                        {formAspirante.email && !formAspirante.email.includes('@') && (
+                          <>
+                            <option value={`${formAspirante.email}@gmail.com`} />
+                            <option value={`${formAspirante.email}@hotmail.com`} />
+                            <option value={`${formAspirante.email}@outlook.com`} />
+                            <option value={`${formAspirante.email}@yahoo.com.mx`} />
+                            <option value={`${formAspirante.email}@utfv.edu.mx`} />
+                          </>
+                        )}
+                      </datalist>
                     </div>
                   </div>
                   <div className="form-group">
@@ -782,25 +887,63 @@ function App() {
                   </div>
                   <div className="form-grid-2">
                     <div className="form-group">
-                      <label>Calle y Número</label>
-                      <input type="text" className="input-control" required value={formAspirante.calle} onChange={(e) => setFormAspirante({ ...formAspirante, calle: e.target.value })} />
+                      <label>Código Postal (5 dígitos)</label>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={5}
+                        pattern="\d{5}"
+                        placeholder="Ej: 54400"
+                        className="input-control"
+                        required
+                        value={formAspirante.codigo_postal}
+                        onChange={(e) => handleCambioCPAspirante(e.target.value)}
+                      />
+                      {buscandoCP && <small style={{ color: 'var(--utfv-gold)' }}>Buscando municipio y colonias...</small>}
                     </div>
                     <div className="form-group">
-                      <label>Colonia</label>
-                      <input type="text" className="input-control" required value={formAspirante.colonia} onChange={(e) => setFormAspirante({ ...formAspirante, colonia: e.target.value })} />
+                      <label>Municipio</label>
+                      <input
+                        type="text"
+                        className="input-control"
+                        placeholder="Se llena con el C.P."
+                        required
+                        value={formAspirante.municipio}
+                        onChange={(e) => setFormAspirante({ ...formAspirante, municipio: e.target.value })}
+                      />
                     </div>
                   </div>
                   <div className="form-grid-2">
                     <div className="form-group">
-                      <label>Municipio</label>
-                      <input type="text" className="input-control" required value={formAspirante.municipio} onChange={(e) => setFormAspirante({ ...formAspirante, municipio: e.target.value })} />
+                      <label>Colonia</label>
+                      {coloniasDisponibles.length > 0 ? (
+                        <select
+                          className="input-control"
+                          required
+                          value={formAspirante.colonia}
+                          onChange={(e) => setFormAspirante({ ...formAspirante, colonia: e.target.value })}
+                        >
+                          {coloniasDisponibles.map((col, idx) => (
+                            <option key={idx} value={col}>{col}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          type="text"
+                          className="input-control"
+                          placeholder="Ingresa C.P. o escribe colonia"
+                          required
+                          value={formAspirante.colonia}
+                          onChange={(e) => setFormAspirante({ ...formAspirante, colonia: e.target.value })}
+                        />
+                      )}
                     </div>
                     <div className="form-group">
-                      <label>Código Postal</label>
-                      <input type="text" className="input-control" required value={formAspirante.codigo_postal} onChange={(e) => setFormAspirante({ ...formAspirante, codigo_postal: e.target.value })} />
+                      <label>Calle y Número</label>
+                      <input type="text" className="input-control" required value={formAspirante.calle} onChange={(e) => setFormAspirante({ ...formAspirante, calle: e.target.value })} />
                     </div>
                   </div>
-                  <button type="submit" className="btn btn-utfv" style={{ width: '100%' }}>
+                    <button type="submit" className="btn btn-utfv" style={{ width: '100%' }}>
                     Registrarme como Aspirante
                   </button>
                 </form>
