@@ -323,6 +323,7 @@ function App() {
             p1: mat.parciales?.p1 !== null && mat.parciales?.p1 !== undefined ? String(mat.parciales.p1) : '',
             p2: mat.parciales?.p2 !== null && mat.parciales?.p2 !== undefined ? String(mat.parciales.p2) : '',
             p3: mat.parciales?.p3 !== null && mat.parciales?.p3 !== undefined ? String(mat.parciales.p3) : '',
+            ego: mat.parciales?.ego !== null && mat.parciales?.ego !== undefined ? String(mat.parciales.ego) : '',
             final: mat.parciales?.final ?? null
           });
         }
@@ -348,10 +349,20 @@ function App() {
       const p3Num = fila.p3 === '' ? null : parseFloat(fila.p3);
 
       if (p1Num === null && p2Num === null && p3Num === null) {
+        fila.ego = '';
         fila.final = null;
       } else {
-        const prom = ((p1Num || 0) + (p2Num || 0) + (p3Num || 0)) / 3;
-        fila.final = Number(prom.toFixed(1));
+        const promOrd = Number((((p1Num || 0) + (p2Num || 0) + (p3Num || 0)) / 3).toFixed(1));
+        const aplicaEgo = p1Num !== null && p2Num !== null && p3Num !== null && promOrd < 8.0;
+
+        if (!aplicaEgo) {
+          fila.ego = '';
+          fila.final = promOrd;
+        } else if (fila.ego !== '') {
+          fila.final = Number(parseFloat(fila.ego).toFixed(1));
+        } else {
+          fila.final = promOrd;
+        }
       }
 
       copia[idx] = fila;
@@ -369,6 +380,7 @@ function App() {
           p1: a.p1 === '' ? null : Number(a.p1),
           p2: a.p2 === '' ? null : Number(a.p2),
           p3: a.p3 === '' ? null : Number(a.p3),
+          ego: a.ego === '' ? null : Number(a.ego),
           final: a.final
         }))
       };
@@ -582,7 +594,7 @@ function App() {
         clave_materia: claveMateria.trim().toUpperCase(),
         nombre_materia: nombreMateria.trim(),
         profesor: profesorMateria.trim(),
-        parciales: { p1: null, p2: null, p3: null, final: null },
+        parciales: { p1: null, p2: null, p3: null, ego: null, final: null },
         evaluada: false
       }
     ]);
@@ -611,10 +623,20 @@ function App() {
 
     const { p1, p2, p3 } = copia[index].parciales;
     if (p1 === null && p2 === null && p3 === null) {
+      copia[index].parciales.ego = null;
       copia[index].parciales.final = null;
     } else {
-      const promedio = ((Number(p1) || 0) + (Number(p2) || 0) + (Number(p3) || 0)) / 3;
-      copia[index].parciales.final = Number(promedio.toFixed(1));
+      const promedioOrd = Number((((Number(p1) || 0) + (Number(p2) || 0) + (Number(p3) || 0)) / 3).toFixed(1));
+      const aplicaEgo = p1 !== null && p2 !== null && p3 !== null && promedioOrd < 8.0;
+
+      if (!aplicaEgo) {
+        copia[index].parciales.ego = null;
+        copia[index].parciales.final = promedioOrd;
+      } else if (copia[index].parciales.ego !== null && copia[index].parciales.ego !== undefined) {
+        copia[index].parciales.final = Number(copia[index].parciales.ego);
+      } else {
+        copia[index].parciales.final = promedioOrd;
+      }
     }
     setMaterias(copia);
   };
@@ -943,7 +965,7 @@ function App() {
                       <input type="text" className="input-control" required value={formAspirante.calle} onChange={(e) => setFormAspirante({ ...formAspirante, calle: e.target.value })} />
                     </div>
                   </div>
-                    <button type="submit" className="btn btn-utfv" style={{ width: '100%' }}>
+                  <button type="submit" className="btn btn-utfv" style={{ width: '100%' }}>
                     Registrarme como Aspirante
                   </button>
                 </form>
@@ -1036,65 +1058,99 @@ function App() {
                       <th>P1</th>
                       <th>P2</th>
                       <th>P3</th>
+                      <th>EGO</th>
                       <th>Promedio Final</th>
                       <th>Estatus</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {actaAlumnos.map((al, idx) => (
-                      <tr key={al.alumnoId}>
-                        <td><strong>{al.alumnoId}</strong></td>
-                        <td>{al.nombreCompleto}</td>
-                        <td>{al.grupo}</td>
-                        <td>
-                          <input
-                            type="text"
-                            inputMode="decimal"
-                            className="grade-input"
-                            placeholder="0 - 10"
-                            value={al.p1}
-                            onChange={(e) => handleCambioNotaProfesor(idx, 'p1', e.target.value)}
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="text"
-                            inputMode="decimal"
-                            className="grade-input"
-                            placeholder="0 - 10"
-                            value={al.p2}
-                            onChange={(e) => handleCambioNotaProfesor(idx, 'p2', e.target.value)}
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="text"
-                            inputMode="decimal"
-                            className="grade-input"
-                            placeholder="0 - 10"
-                            value={al.p3}
-                            onChange={(e) => handleCambioNotaProfesor(idx, 'p3', e.target.value)}
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="text"
-                            className={`grade-input grade-final ${al.final === null ? '' : al.final >= 8 ? 'aprobado' : 'reprobado'}`}
-                            value={al.final ?? '-'}
-                            readOnly
-                          />
-                        </td>
-                        <td>
-                          {al.final === null ? (
-                            <span style={{ color: 'var(--utfv-gray)', fontSize: '0.82rem' }}>Pendiente</span>
-                          ) : (
-                            <span className={`status-pill ${al.final >= 8 ? 'status-activo' : 'status-pendiente'}`}>
-                              {al.final >= 8 ? 'APROBADO' : 'NO ACREDITADO'}
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
+                    {actaAlumnos.map((al, idx) => {
+                      const p1Num = al.p1 === '' ? null : parseFloat(al.p1);
+                      const p2Num = al.p2 === '' ? null : parseFloat(al.p2);
+                      const p3Num = al.p3 === '' ? null : parseFloat(al.p3);
+                      const promOrd = (p1Num !== null && p2Num !== null && p3Num !== null)
+                        ? Number(((p1Num + p2Num + p3Num) / 3).toFixed(1))
+                        : null;
+                      const requiereEgo = promOrd !== null && promOrd < 8.0;
+
+                      return (
+                        <tr key={al.alumnoId}>
+                          <td><strong>{al.alumnoId}</strong></td>
+                          <td>{al.nombreCompleto}</td>
+                          <td>{al.grupo}</td>
+                          <td>
+                            <input
+                              type="text"
+                              inputMode="decimal"
+                              className="grade-input"
+                              placeholder="0 - 10"
+                              value={al.p1}
+                              onChange={(e) => handleCambioNotaProfesor(idx, 'p1', e.target.value)}
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="text"
+                              inputMode="decimal"
+                              className="grade-input"
+                              placeholder="0 - 10"
+                              value={al.p2}
+                              onChange={(e) => handleCambioNotaProfesor(idx, 'p2', e.target.value)}
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="text"
+                              inputMode="decimal"
+                              className="grade-input"
+                              placeholder="0 - 10"
+                              value={al.p3}
+                              onChange={(e) => handleCambioNotaProfesor(idx, 'p3', e.target.value)}
+                            />
+                          </td>
+                          <td>
+                            {requiereEgo ? (
+                              <input
+                                type="text"
+                                inputMode="decimal"
+                                className="grade-input"
+                                style={{ borderColor: '#d97706', background: '#fffbeb' }}
+                                placeholder="EGO"
+                                title="Calificación de Examen Global Ordinario / Extraordinario"
+                                value={al.ego}
+                                onChange={(e) => handleCambioNotaProfesor(idx, 'ego', e.target.value)}
+                              />
+                            ) : (
+                              <input
+                                type="text"
+                                className="grade-input"
+                                style={{ background: '#f5f0ec', color: '#a8a29e' }}
+                                value="—"
+                                disabled
+                                title="Solo aplica si el promedio de P1, P2 y P3 es menor a 8.0"
+                              />
+                            )}
+                          </td>
+                          <td>
+                            <input
+                              type="text"
+                              className={`grade-input grade-final ${al.final === null ? '' : al.final >= 8 ? 'aprobado' : 'reprobado'}`}
+                              value={al.final ?? '-'}
+                              readOnly
+                            />
+                          </td>
+                          <td>
+                            {al.final === null ? (
+                              <span style={{ color: 'var(--utfv-gray)', fontSize: '0.82rem' }}>Pendiente</span>
+                            ) : (
+                              <span className={`status-pill ${al.final >= 8 ? 'status-activo' : 'status-pendiente'}`}>
+                                {al.final >= 8 ? (al.ego !== '' ? 'APROBADO (EGO)' : 'APROBADO') : 'NO ACREDITADO'}
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
 
@@ -1881,6 +1937,7 @@ function App() {
                         <th>P1</th>
                         <th>P2</th>
                         <th>P3</th>
+                        <th>EGO</th>
                         <th>Final</th>
                         {esAdmin && <th className="no-print">Quitar</th>}
                       </tr>
@@ -1888,6 +1945,14 @@ function App() {
                     <tbody>
                       {materias.map((mat, idx) => {
                         const finalVal = mat.parciales?.final;
+                        const p1 = mat.parciales?.p1;
+                        const p2 = mat.parciales?.p2;
+                        const p3 = mat.parciales?.p3;
+                        const promOrd = (p1 !== null && p1 !== undefined && p2 !== null && p2 !== undefined && p3 !== null && p3 !== undefined)
+                          ? Number(((Number(p1) + Number(p2) + Number(p3)) / 3).toFixed(1))
+                          : null;
+                        const requiereEgo = promOrd !== null && promOrd < 8.0;
+
                         return (
                           <tr key={mat.clave_materia}>
                             <td><strong>{mat.clave_materia}</strong></td>
@@ -1922,6 +1987,29 @@ function App() {
                                 disabled={!esAdmin}
                                 onChange={(e) => handleCambioNota(idx, 'p3', e.target.value)}
                               />
+                            </td>
+                            <td>
+                              {requiereEgo ? (
+                                <input
+                                  type="number" step="0.1" min="0" max="10"
+                                  className="grade-input"
+                                  style={{ borderColor: '#d97706', background: '#fffbeb' }}
+                                  placeholder="EGO"
+                                  title="Examen Global Ordinario / Extraordinario"
+                                  value={mat.parciales?.ego ?? ''}
+                                  disabled={!esAdmin}
+                                  onChange={(e) => handleCambioNota(idx, 'ego', e.target.value)}
+                                />
+                              ) : (
+                                <input
+                                  type="text"
+                                  className="grade-input"
+                                  style={{ background: '#f5f0ec', color: '#a8a29e' }}
+                                  value="—"
+                                  disabled
+                                  title="Solo habilitado si el promedio de los 3 parciales es menor a 8.0"
+                                />
+                              )}
                             </td>
                             <td>
                               <input
@@ -1992,6 +2080,7 @@ function App() {
                     <th>P1</th>
                     <th>P2</th>
                     <th>P3</th>
+                    <th>EGO</th>
                     <th>Final</th>
                   </tr>
                 </thead>
@@ -2005,6 +2094,7 @@ function App() {
                       <td>{m.parciales?.p1 ?? '-'}</td>
                       <td>{m.parciales?.p2 ?? '-'}</td>
                       <td>{m.parciales?.p3 ?? '-'}</td>
+                      <td>{m.parciales?.ego ?? '—'}</td>
                       <td><strong>{m.parciales?.final ?? '-'}</strong></td>
                     </tr>
                   ))}
